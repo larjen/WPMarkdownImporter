@@ -8,6 +8,7 @@ class WPMarkdownImporter {
     static $debug = true;
     static $plugin_name = "WPMarkdownImporter";
     static $import_file = __DIR__ . DIRECTORY_SEPARATOR . "import.txt";
+    static $newline_separator = "\r\n";
 
     /*
      * tasks to run when the user activates the plugin
@@ -135,8 +136,7 @@ class WPMarkdownImporter {
     static function get_metadata($markdown) {
 
         $meta_data = [];
-        $separator = "\r\n";
-        $line = strtok($markdown, $separator);
+        $line = strtok($markdown, self::$newline_separator);
 
         while ($line !== false) {
 
@@ -157,7 +157,7 @@ class WPMarkdownImporter {
                 array_push($meta_data[$key], $value);
             }
 
-            $line = strtok($separator);
+            $line = strtok(self::$newline_separator);
         }
 
         //print_r($meta_data);
@@ -171,8 +171,33 @@ class WPMarkdownImporter {
      * return false.
      */
 
-    static function post_exists($markdown, $uri) {
-        return false;
+    static function post_exists($uri) {
+        
+        global $table_prefix;
+        global $wpdb;
+
+        $sql = 'SELECT DISTINCT post_id FROM ' . $table_prefix . 'postmeta WHERE meta_key = "WPMarkdownImporterUri" AND meta_value = "'.$uri.'"';
+        $rows = $wpdb->get_results($sql, 'ARRAY_A');
+        $number_of_rows = count($rows);
+
+        if ($number_of_rows == 0){
+            
+            // post does not exist
+            return false;
+            
+        }else{
+            
+            // post exists return the ID
+            return $rows[0]["post_id"];
+        }
+    }
+
+    /*
+     * Strip the first line of markdown
+     */
+
+    static function stripFirstLine($text) {
+        return substr($text, strpos($text, "\n") + 1);
     }
 
     /*
@@ -180,9 +205,6 @@ class WPMarkdownImporter {
      */
 
     static function insert_markdown_as_post($markdown, $uri) {
-
-        // check to see if we need to update or create a new post
-        $post_id = self::post_exists($markdown, $uri);
 
         // extract all metadata from the $markdown file
         $meta_data = self::get_metadata($markdown);
@@ -199,7 +221,7 @@ class WPMarkdownImporter {
             }
             unset($meta_data["tag"]);
         }
-        
+
         $categories = [];
         // sanitize categories from Markdown
         if (isset($meta_data["category"])) {
@@ -212,48 +234,87 @@ class WPMarkdownImporter {
             }
             unset($meta_data["category"]);
         }
+
+        $category_ids = [];
+        // get an array of ids for found categories
+        foreach ($categories as $cat_name) {
+
+            $term = term_exists($cat_name, 'category');
+
+            if ($term !== 0 && $term !== null) {
+
+                // the term id must be pushed to the array of ids
+                array_push($category_ids, $term["term_id"]);
+            } else {
+
+                // create a new category and add id to array of ids
+                $new_cat = array(
+                    'cat_name' => $cat_name
+                );
+
+                // Create the category
+                $new_cat_id = wp_insert_category($new_cat);
+
+                array_push($category_ids, $new_cat_id);
+            }
+        }
+
+        // First line is the title, this is redundant so delete the line
+        $markdown = self::stripFirstLine($markdown);
+
+        // now parse the content
+        $Parsedown = new Parsedown();
+        $content = $Parsedown->text($markdown);
+
         
         
-        print_r($tags);
-
-
         // build the post
         $post = array(
             'post_title' => $meta_data["title"][0],
             'comment_status' => 'closed', // 'closed' means no comments.
             'ping_status' => 'closed', // 'closed' means pingbacks or trackbacks turned off
             'post_author' => get_option(self::$plugin_name . "_IMPORT_AS"), //The user ID number of the author.
-            'post_content' => $markdown, //The full text of the post.
+            'post_content' => $content, //The full text of the post.
             'post_excerpt' => $meta_data["excerpt"][0],
             'post_date' => date("Y-m-d H:i:s", strtotime($meta_data["start_date"][0])), //The time post was made.
             'post_date_gmt' => gmdate("Y-m-d H:i:s", strtotime($meta_data["start_date"][0])), //The time post was made, in GMT.
             'post_status' => 'publish', //Set the status of the new post. 
             'post_type' => 'post', //You may want to insert a regular post, page, link, a menu item or some custom post type
-            'post_category' => $categories, //Categories
+            'post_category' => $category_ids, //Categories
             'tags_input' => $tags //For tags.
         );
-        
-        // Insert the post
-        $insert = wp_insert_post($post);
-        
+
+        // check to see if we need to update or create a new post
+        $post_id = self::post_exists($uri);
+
+        if ($post_id === false){
+            
+            // post does not exist, insert the post
+            $post_id = wp_insert_post($post);
+            
+        }else{
+            
+            // post exists
+            $post["ID"]=$post_id;
+            wp_update_post( $post );
+        }
+
         // Add meta tags to post
-        foreach ($meta_data as $key => $array){
+        foreach ($meta_data as $key => $array) {
             $value = '';
-            
-            foreach ($array as $innerKey => $innerValue){
-                $value = $innerValue ."," . $value; 
+
+            foreach ($array as $innerKey => $innerValue) {
+                $value = $innerValue . "," . $value;
             }
-            
-            if ($value != ''){
+
+            if ($value != '') {
                 $value = substr($value, 0, -1);
-                
-                
-                add_post_meta($insert, $key , $value, true);
+                add_post_meta($post_id, $key, $value, true);
             }
         }
 
-        add_post_meta($insert, 'WPMarkdownImporter', 'true', true);
-        add_post_meta($insert, 'WPMarkdownImporterUri', $uri, true);
+        add_post_meta($post_id, 'WPMarkdownImporter', 'true', true);
+        add_post_meta($post_id, 'WPMarkdownImporterUri', $uri, true);
 
         return false;
     }

@@ -47,7 +47,7 @@ class WPMarkdownImporterAdmin extends WPMarkdownImporter {
             wp_delete_post($row["post_id"], true);
         }
 
-        self::add_message("All markdown imported posts have been deleted.");
+        self::add_message("All Markdown imported posts have been deleted.");
     }
     
     /*
@@ -100,8 +100,6 @@ class WPMarkdownImporterAdmin extends WPMarkdownImporter {
             echo 'get_option(self::$plugin_name . "_MESSAGES")=' . print_r(get_option(self::$plugin_name . "_MESSAGES")) . PHP_EOL;
             echo 'get_option(self::$plugin_name . "_URLS_TO_PROCESS")=' . print_r(get_option(self::$plugin_name . "_URLS_TO_PROCESS")) . PHP_EOL;
             echo 'get_option(self::$plugin_name . "_IMPORT_AS")=' . print_r(get_option(self::$plugin_name."_IMPORT_AS")) . PHP_EOL;
-
-            
             echo '</pre>';
         }
 
