@@ -9,8 +9,13 @@ class WPMarkdownImporterAdmin extends WPMarkdownImporter {
     /*
      * Writes the import file
      */
-    static function write_file(){
+    static function write_file($file_contents){
         
+        // now add file to cache
+        $fh = fopen($import_file, 'w') or die();
+        fwrite($fh, $file_contents);
+        fclose($fh);
+
     }
 
     /*
@@ -70,15 +75,19 @@ class WPMarkdownImporterAdmin extends WPMarkdownImporter {
             }
         }
         
-        
+        // update the import.txt file table
+        if (isset($_POST[self::$plugin_name . "_IMPORT_FILE"])) {
+            
+            // write this file to disk
+            self::write_file($_POST[self::$plugin_name . "_IMPORT_FILE"]);
+            
+            // then import them again
+            self::add_imports_from_file();
+        }
+
         // read the file into memory
         $import_file_contents = file_get_contents(self::$import_file);
         
-        // update the import.txt file table
-        if (isset($_POST[self::$plugin_name . "_UPDATE_IMPORT_FILE"])) {
-            //$textAreaValue = stripslashes($_POST[self::$plugin_name . "_IMPORT_FILE"]);
-        }
-
         if (isset($_POST["ACTIVE"])) {
             if ($_POST["ACTIVE"] == 'activated') {
                 self::activate_import();
@@ -113,6 +122,10 @@ class WPMarkdownImporterAdmin extends WPMarkdownImporter {
         // since the messages has been shown, purge them.
         update_option(self::$plugin_name . "_MESSAGES", []);
 
+        // remaining URLs to parse
+        $remaining_urls_to_parse = count(get_option(self::$plugin_name . "_URLS_TO_PROCESS"));
+        
+        
         // print the admin page
         echo '<div class="wrap">';
         echo '<h2>'.self::$plugin_name.'</h2>';
@@ -121,6 +134,9 @@ class WPMarkdownImporterAdmin extends WPMarkdownImporter {
         echo '<form method="post" action="">';
         
         echo '<table class="form-table"><tbody>';
+
+        echo '<tr valign="top"><th scope="row">Remaining documents:</th><td><p>' . $remaining_urls_to_parse . '</p></td></tr>';
+
         echo '<tr valign="top"><th scope="row">Activate import</th><td><fieldset><legend class="screen-reader-text"><span>Activate</span></legend>';
 
         if (get_option(self::$plugin_name.'_ACTIVE') == true) {
@@ -143,11 +159,22 @@ class WPMarkdownImporterAdmin extends WPMarkdownImporter {
         echo '<tr valign="top"><th scope="row">Force import</th><td><fieldset><legend class="screen-reader-text"><span>Force import</span></legend><label for="FORCE_IMPORT"><input id="FORCE_IMPORT" name="'.self::$plugin_name.'_FORCE_IMPORT" type="checkbox" ' . $force_import_checked . '></label><p class="description">Force import of the next Markdown document on the list.</p></fieldset></td></tr>';
         echo '</tbody></table>';        
         
-        
-        echo '<textarea name="'.self::$plugin_name .'_IMPORT_FILE" style="width: 50%;height: 400px;">' . $import_file_contents . '</textarea>';
         echo '<p class="submit"><input type="submit" name="submit" id="submit" class="button button-primary" value="Save Changes"></p>';
-        echo '</form></div>';
+        echo '</form>';
+        
+        echo '<form method="post" action="">';
+
+        echo '<h3 class="title">Update import URLs</h3>';
+        echo '<p>This is the list of URL endpoints that points to Markdown documents the plugin will import. When you change and save these endpoints, the plugin will attempt to parse all of your Markdown documents again.</p>';
+        echo '<textarea name="'.self::$plugin_name .'_IMPORT_FILE" style="width: 50%;height: 400px;">' . $import_file_contents . '</textarea>';
+        echo '<p class="submit"><input type="submit" name="submit" id="submit" class="button button-primary" value="Update import URLs"></p>';
+    
+        echo '</form>';
+        echo '</div>';
     }
+    
+    
+    
 
 }
 

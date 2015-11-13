@@ -5,7 +5,7 @@ require_once('parsedown-1.6.0/Parsedown.php');
 
 class WPMarkdownImporter {
 
-    static $debug = true;
+    static $debug = false;
     static $plugin_name = "WPMarkdownImporter";
     static $import_file = __DIR__ . DIRECTORY_SEPARATOR . "import.txt";
     static $newline_separator = "\r\n";
@@ -316,7 +316,7 @@ class WPMarkdownImporter {
         add_post_meta($post_id, 'WPMarkdownImporter', 'true', true);
         add_post_meta($post_id, 'WPMarkdownImporterUri', $uri, true);
 
-        return false;
+        return true;
     }
 
     /*
@@ -351,7 +351,7 @@ class WPMarkdownImporter {
         // now insert the contents into WordPress
         self::insert_markdown_as_post($markdown, $uri);
 
-        return false;
+        return true;
     }
 
     /*
