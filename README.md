@@ -13,10 +13,14 @@ WordPress plugin that imports a list of Markdown files into your WordPress blog 
 * Uploaded plugin.
 
 [//]: title (WPMarkDownImporter)
+[//]: category (work)
 [//]: start_date (20151112)
 [//]: end_date (#)
 [//]: excerpt (WordPress plugin that imports a list of Markdown files into your WordPress blog as posts.)
-[//]: tags (WordPress,PHP,Markdown)
+[//]: tag (WordPress)
+[//]: tag (PHP)
+[//]: tag (Markdown)
+[//]: tag (GitHub)
 [//]: url_github (https://github.com/larjen/WPMarkdownImporter)
 [//]: url_demo (#) 
 [//]: url_wordpress (https://wordpress.org/plugins/WPMarkdownImporter/)

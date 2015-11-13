@@ -57,7 +57,7 @@ class WPMarkdownImporter {
 
     static function additional_schedule($schedules) {
         // interval in seconds
-        $schedules[self::$plugin_name . '_every5Minutes'] = array('interval' => 60, 'display' => 'Every 5 minutes');
+        $schedules[self::$plugin_name . '_every5Minutes'] = array('interval' => 60*5, 'display' => 'Every 5 minutes');
         return $schedules;
     }
 

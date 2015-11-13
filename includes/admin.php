@@ -139,7 +139,12 @@ class WPMarkdownImporterAdmin extends WPMarkdownImporter {
 
         echo '<tr valign="top"><th scope="row">Remaining documents:</th><td><p>' . $remaining_urls_to_parse . '</p></td></tr>';
         
-        echo '<tr valign="top"><th scope="row">All documents have been read:</th><td><p>' . (get_option(self::$plugin_name . "_IMPORTED_ALL_MARKDOWN_DOCUMENTS") == false)? 'Yes':'No'.'</p></td></tr>';
+        $all_documents_read = "No";
+        if (get_option(self::$plugin_name . "_IMPORTED_ALL_MARKDOWN_DOCUMENTS") == true){
+            $all_documents_read = "Yes";
+        }
+        
+        echo '<tr valign="top"><th scope="row">All documents have been read:</th><td><p>' . $all_documents_read . '</p></td></tr>';
 
         echo '<tr valign="top"><th scope="row">Activate import</th><td><fieldset><legend class="screen-reader-text"><span>Activate</span></legend>';
 
