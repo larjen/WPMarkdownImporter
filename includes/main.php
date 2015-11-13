@@ -29,6 +29,7 @@ class WPMarkdownImporter {
      */
 
     static function deactivation() {
+        self::clear_schedule();
         delete_option(self::$plugin_name . "_MESSAGES");
         delete_option(self::$plugin_name . "_URLS_TO_PROCESS");
         delete_option(self::$plugin_name . "_ACTIVE");
