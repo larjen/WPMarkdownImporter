@@ -109,8 +109,8 @@ class WPMarkdownImporter {
 
         if ($fh) {
 
-            // now get the array from database
-            $urls_to_process = get_option(self::$plugin_name . "_URLS_TO_PROCESS");
+            // start with a new empty array
+            $urls_to_process = [];
 
             while (($line = fgets($fh)) !== false) {
                 // add line to array
@@ -368,6 +368,12 @@ class WPMarkdownImporter {
 
             // no more markdown files to import
             update_option(self::$plugin_name . "_IMPORTED_ALL_MARKDOWN_DOCUMENTS", true);
+            
+            // if the plugin is actively fetching new documents reset and start again
+            if (get_option(self::$plugin_name."_ACTIVE") == true) {
+                self::add_imports_from_file();
+            }
+            
         } else {
 
             $next_uri = array_shift($urls_to_process);

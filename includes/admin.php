@@ -12,7 +12,7 @@ class WPMarkdownImporterAdmin extends WPMarkdownImporter {
     static function write_file($file_contents){
         
         // now add file to cache
-        $fh = fopen($import_file, 'w') or die();
+        $fh = fopen(self::$import_file, 'w') or die();
         fwrite($fh, $file_contents);
         fclose($fh);
 
@@ -23,6 +23,7 @@ class WPMarkdownImporterAdmin extends WPMarkdownImporter {
      */
     static function activate_import() {
         if (get_option(self::$plugin_name."_ACTIVE") == false) {
+            self::start_schedule();
             self::add_message("Import of Markdown files has been activated.");
         }
         update_option(self::$plugin_name."_ACTIVE", true);
@@ -33,6 +34,7 @@ class WPMarkdownImporterAdmin extends WPMarkdownImporter {
      */
     static function deactivate_import() {
         if (get_option(self::$plugin_name."_ACTIVE") == true) {
+            self::clear_schedule();
             self::add_message("Import of Markdown files has been deactivated.");
         }
         update_option(self::$plugin_name."_ACTIVE", false);
@@ -136,6 +138,8 @@ class WPMarkdownImporterAdmin extends WPMarkdownImporter {
         echo '<table class="form-table"><tbody>';
 
         echo '<tr valign="top"><th scope="row">Remaining documents:</th><td><p>' . $remaining_urls_to_parse . '</p></td></tr>';
+        
+        echo '<tr valign="top"><th scope="row">All documents have been read:</th><td><p>' . (get_option(self::$plugin_name . "_IMPORTED_ALL_MARKDOWN_DOCUMENTS") == false)? 'Yes':'No'.'</p></td></tr>';
 
         echo '<tr valign="top"><th scope="row">Activate import</th><td><fieldset><legend class="screen-reader-text"><span>Activate</span></legend>';
 
@@ -145,7 +149,7 @@ class WPMarkdownImporterAdmin extends WPMarkdownImporter {
             echo '<label for="ACTIVE"><input id="ACTIVE" name="ACTIVE" type="radio" value="activated"> Import of Markdown documents is active.</label><br /><legend class="screen-reader-text"><span>Dectivate</span></legend><label for="DEACTIVE"><input checked="checked" id="DEACTIVE" name="ACTIVE" type="radio" value="deactivated"> Import of Markdown documents is deactivated.</label>';
         }
 
-        echo '<p class="description">When activated this plugin will import one Markdown file every 5 minutes until, all of your files has been imported.</p>';
+        echo '<p class="description">When activated this plugin will import one Markdown file every 5 minutes. When the end is reached, it will start again from the top.</p>';
         echo '</fieldset></td></tr>';
         
         echo '<tr valign="top"><th scope="row"><label for="TWITTER_CATEGORY">Import Markdown posts as</label></th><td>';
