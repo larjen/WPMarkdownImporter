@@ -2,6 +2,8 @@
 
 WordPress plugin that imports a list of Markdown files into your WordPress blog as posts.
 
+This plugin uses the [Parsedown](https://github.com/erusev/parsedown) engine.
+
 ## Installation
 
 1. Download and unzip to your Wordpress plugin folder.
