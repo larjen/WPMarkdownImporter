@@ -80,6 +80,9 @@ class WPMarkdownImporterAdmin extends WPMarkdownImporter {
         // update the import.txt file table
         if (isset($_POST[self::$plugin_name . "_IMPORT_FILE"])) {
             
+            // set the all documents read option to false
+            update_option(self::$plugin_name . "_IMPORTED_ALL_MARKDOWN_DOCUMENTS", false); 
+            
             // write this file to disk
             self::write_file($_POST[self::$plugin_name . "_IMPORT_FILE"]);
             

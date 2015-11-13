@@ -370,10 +370,7 @@ class WPMarkdownImporter {
             // no more markdown files to import
             update_option(self::$plugin_name . "_IMPORTED_ALL_MARKDOWN_DOCUMENTS", true);
             
-            // if the plugin is actively fetching new documents reset and start again
-            if (get_option(self::$plugin_name."_ACTIVE") == true) {
-                self::add_imports_from_file();
-            }
+            return true;
             
         } else {
 
@@ -384,8 +381,25 @@ class WPMarkdownImporter {
                 // the document was imported, update the remaining documents
                 // to be updated
 
-                update_option(self::$plugin_name . "_URLS_TO_PROCESS", $urls_to_process);
-                self::add_message("Successfully imported " . $next_uri . " to WordPress.");
+                // if auto_import enabled and we have reached the end then reimport
+                // the documents to parse
+                
+                if(count($urls_to_process) == 0){
+                    update_option(self::$plugin_name . "_IMPORTED_ALL_MARKDOWN_DOCUMENTS", true);
+                }
+                
+                if (get_option(self::$plugin_name . "_ACTIVE") == true && count($urls_to_process) == 0) {
+                    
+                    self::add_imports_from_file();
+                    self::add_message("Successfully imported " . $next_uri . " to WordPress, now starting importing from top.");
+                    
+                } else {
+                    
+                    update_option(self::$plugin_name . "_URLS_TO_PROCESS", $urls_to_process);
+                    self::add_message("Successfully imported " . $next_uri . " to WordPress.");
+                }
+                
+                
             } else {
 
                 // there was an error push the document to the end of the list
