@@ -131,7 +131,7 @@ class WPMarkdownImporterAdmin extends WPMarkdownImporter {
         // print the admin page
         echo '<div class="wrap">';
         echo '<h2>'.self::$plugin_name.'</h2>';
-        echo '<p>This plugin will attempt to read in all of your Markdown documents into WordPress as posts, it will do this either every 5 minutes.</p>';
+        echo '<p>When import has been activated, this plugin will attempt to read in all of your Markdown documents into WordPress as posts every 5 minutes.</p>';
         
         echo '<form method="post" action="">';
         
