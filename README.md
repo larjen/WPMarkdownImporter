@@ -11,6 +11,9 @@ This plugin uses the [Parsedown](https://github.com/erusev/parsedown) engine.
 
 ## Changelog
 
+### 1.0.1
+* Now only update the document if it is changed, when auto-import is active.
+
 ### 1.0.0
 * Uploaded plugin.
 

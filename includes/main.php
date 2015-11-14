@@ -202,6 +202,20 @@ class WPMarkdownImporter {
     }
 
     /*
+     * Check to see if post was altered
+     */
+    
+    static function post_is_altered($post_id, $markdown){
+        
+        $stored_hashkey = get_post_meta($post_id, 'WPMarkdownImporterHash', true);
+        
+        if ($stored_hashkey == md5($markdown)){
+            return false;
+        }
+        return true;
+    }
+    
+    /*
      * inserts a markdown file as a post in wordpress
      */
 
@@ -293,12 +307,32 @@ class WPMarkdownImporter {
             // post does not exist, insert the post
             $post_id = wp_insert_post($post);
             
+            // add metadata to the post
+            self::add_meta_data_to_post($post_id, $meta_data, $uri, $markdown);
+            
         }else{
             
-            // post exists
-            $post["ID"]=$post_id;
-            wp_update_post( $post );
+            // only update the post if it was altered
+            if (self::post_is_altered($post_id,$markdown)){
+                
+                // post exists
+                $post["ID"]=$post_id;
+        
+                wp_update_post( $post );
+                
+                // add metadata to the post
+                self::add_meta_data_to_post($post_id, $meta_data, $uri, $markdown);
+            }
         }
+
+        return true;
+    }
+
+    /*
+     * Add metadata to post
+     */
+
+     static function add_meta_data_to_post($post_id, $meta_data, $uri, $markdown){
 
         // Add meta tags to post
         foreach ($meta_data as $key => $array) {
@@ -314,12 +348,11 @@ class WPMarkdownImporter {
             }
         }
 
+        add_post_meta($post_id, 'WPMarkdownImporterHash', md5($markdown), true);
         add_post_meta($post_id, 'WPMarkdownImporter', 'true', true);
         add_post_meta($post_id, 'WPMarkdownImporterUri', $uri, true);
-
-        return true;
-    }
-
+     }
+     
     /*
      * Imports this markdown document, returns true or false depending on
      * the successfull import
