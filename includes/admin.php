@@ -12,7 +12,7 @@ class WPMarkdownImporterAdmin extends WPMarkdownImporter {
     static function write_file($file_contents){
         
         // now add file to cache
-        $fh = fopen(self::$import_file, 'w') or die();
+        $fh = fopen(__DIR__.DIRECTORY_SEPARATOR."import.txt", 'w') or die();
         fwrite($fh, $file_contents);
         fclose($fh);
 
@@ -91,7 +91,7 @@ class WPMarkdownImporterAdmin extends WPMarkdownImporter {
         }
 
         // read the file into memory
-        $import_file_contents = file_get_contents(self::$import_file);
+        $import_file_contents = file_get_contents(__DIR__.DIRECTORY_SEPARATOR."import.txt");
         
         if (isset($_POST["ACTIVE"])) {
             if ($_POST["ACTIVE"] == 'activated') {

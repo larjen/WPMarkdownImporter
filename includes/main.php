@@ -7,7 +7,7 @@ class WPMarkdownImporter {
 
     static $debug = false;
     static $plugin_name = "WPMarkdownImporter";
-    static $import_file = __DIR__ . DIRECTORY_SEPARATOR . "import.txt";
+    //static $import_file = "".__DIR__."".DIRECTORY_SEPARATOR."import.txt";
     static $newline_separator = "\r\n";
 
     /*
@@ -106,7 +106,7 @@ class WPMarkdownImporter {
     static function add_imports_from_file() {
 
         // get filehandler
-        $fh = fopen(self::$import_file, "r");
+        $fh = fopen(__DIR__.DIRECTORY_SEPARATOR."import.txt", "r");
 
         if ($fh) {
 
@@ -125,7 +125,7 @@ class WPMarkdownImporter {
             update_option(self::$plugin_name . "_URLS_TO_PROCESS", $urls_to_process);
         } else {
             // error opening the file.
-            self::add_message("There was a problem opening the file " . self::$import_file . ".");
+            self::add_message("There was a problem opening the file " . __DIR__.DIRECTORY_SEPARATOR."import.txt" . ".");
         }
     }
 
