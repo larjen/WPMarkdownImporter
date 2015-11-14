@@ -5,7 +5,7 @@
   Plugin URI: https://github.com/larjen/WPMarkdownImporter
   Description: WordPress plugin that imports a list of Markdown files into your WordPress blog as posts.
   Author: Lars Jensen
-  Version: 1.0.1
+  Version: 1.0.0
   Author URI: http://exenova.dk/
  */
 

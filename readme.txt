@@ -1,4 +1,4 @@
-=== WPTagSanitizer ===
+=== WPMarkdownImporter ===
 Contributors: larjen
 Donate link: http://exenova.dk/
 Tags: Twitter
