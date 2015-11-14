@@ -26,6 +26,7 @@ This plugin uses the [Parsedown](https://github.com/erusev/parsedown) engine.
 [//]: tag (PHP)
 [//]: tag (Markdown)
 [//]: tag (GitHub)
+[//]: tag (Work)
 [//]: url_github (https://github.com/larjen/WPMarkdownImporter)
 [//]: url_demo (#) 
 [//]: url_wordpress (https://wordpress.org/plugins/WPMarkdownImporter/)
