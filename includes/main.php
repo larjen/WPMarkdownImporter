@@ -138,11 +138,16 @@ class WPMarkdownImporter {
      */
 
     static function fetch_media($file_url, $post_id, $markdown, $is_featured) {
+        
+        // in order for this to run in background as a scheduled task, we need access
+        // to these files
+        require_once(ABSPATH . 'wp-load.php');
+        require_once(ABSPATH . 'wp-admin/includes/image.php');
+        
+        
+        error_log("Importing:       " . $file_url . " to post " . $post_id);
 
-        error_log("importing " . $file_url . " to post " . $post_id);
 
-        //require_once(ABSPATH . 'wp-load.php');
-        //require_once(ABSPATH . 'wp-admin/includes/image.php');
         global $wpdb;
 
         if (!$post_id) {
@@ -152,7 +157,7 @@ class WPMarkdownImporter {
 
         if (self::uri_exists($file_url)) { 
             
-            error_log("Now imported: ".$file_url);
+            error_log("Verified exists: " . $file_url . " to post " . $post_id);
 
             $artDir = 'wp-content' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'importedmedia' . DIRECTORY_SEPARATOR . md5($markdown) . DIRECTORY_SEPARATOR;
 
