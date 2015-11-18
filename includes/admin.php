@@ -87,7 +87,11 @@ class WPMarkdownImporterAdmin extends WPMarkdownImporter {
             self::write_file($_POST[self::$plugin_name . "_IMPORT_FILE"]);
             
             // then import them again
-            self::add_imports_from_file();
+            update_option(self::$plugin_name . "_URLS_TO_PROCESS", self::get_imports_from_file());
+            
+            // set the all documents read option to false
+            update_option(self::$plugin_name . "_IMPORTED_ALL_MARKDOWN_DOCUMENTS", false); 
+
         }
 
         // read the file into memory
@@ -178,7 +182,7 @@ class WPMarkdownImporterAdmin extends WPMarkdownImporter {
 
         echo '<h3 class="title">Update import URLs</h3>';
         echo '<p>This is the list of URL endpoints that points to Markdown documents the plugin will import. When you change and save these endpoints, the plugin will attempt to parse all of your Markdown documents again.</p>';
-        echo '<textarea name="'.self::$plugin_name .'_IMPORT_FILE" style="width: 50%;height: 400px;">' . $import_file_contents . '</textarea>';
+        echo '<textarea name="'.self::$plugin_name .'_IMPORT_FILE" style="width: 50%;height: 400px;white-space: nowrap; overflow: auto;.">' . $import_file_contents . '</textarea>';
         echo '<p class="submit"><input type="submit" name="submit" id="submit" class="button button-primary" value="Update import URLs"></p>';
     
         echo '</form>';

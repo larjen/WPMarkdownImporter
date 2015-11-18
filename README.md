@@ -31,3 +31,7 @@ This plugin uses the [Parsedown](https://github.com/erusev/parsedown) engine.
 [//]: url_demo (#) 
 [//]: url_wordpress (https://wordpress.org/plugins/WPMarkdownImporter/)
 [//]: url_download (https://github.com/larjen/WPMarkdownImporter/archive/master.zip)
+[//]: thumbnail (http://www.exenova.dk/download/a.jpg)
+[//]: heroimage (http://www.exenova.dk/download/b.jpg)
+[//]: image (http://www.exenova.dk/download/c.jpg)
+[//]: image (http://www.exenova.dk/download/d.jpg)

@@ -5,7 +5,7 @@ require_once('parsedown-1.6.0/Parsedown.php');
 
 class WPMarkdownImporter {
 
-    static $debug = false;
+    static $debug = true;
     static $plugin_name = "WPMarkdownImporter";
     //static $import_file = "".__DIR__."".DIRECTORY_SEPARATOR."import.txt";
     static $newline_separator = "\r\n";
@@ -19,9 +19,10 @@ class WPMarkdownImporter {
         update_option(self::$plugin_name . "_URLS_TO_PROCESS", []);
         update_option(self::$plugin_name . "_ACTIVE", false);
         update_option(self::$plugin_name . "_IMPORTED_ALL_MARKDOWN_DOCUMENTS", false);
+        update_option(self::$plugin_name . "_URLS_TO_PROCESS", self::get_imports_from_file());
 
+        
         self::add_message("Activated the plugin.");
-        self::add_imports_from_file();
     }
 
     /*
@@ -58,7 +59,7 @@ class WPMarkdownImporter {
 
     static function additional_schedule($schedules) {
         // interval in seconds
-        $schedules[self::$plugin_name . '_every5Minutes'] = array('interval' => 60*5, 'display' => 'Every 5 minutes');
+        $schedules[self::$plugin_name . '_every5Minutes'] = array('interval' => 60 * 5, 'display' => 'Every 5 minutes');
         return $schedules;
     }
 
@@ -87,26 +88,14 @@ class WPMarkdownImporter {
     }
 
     /*
-     * Scheduled import of next markdown file
+     * This function parses the import file and returns an array of files to parse
+     * the database, or false if no array can be traversed
      */
 
-    static function import_next_markdown_file_scheduled() {
-
-        // if the plugin is activated then import the next markdown file
-        if (get_option(self::$plugin_name . "_ACTIVE") == true) {
-            self::import_next_markdown_file();
-        }
-    }
-
-    /*
-     * This function parses the import file and adds it to an array of URLs in
-     * the database
-     */
-
-    static function add_imports_from_file() {
+    static function get_imports_from_file() {
 
         // get filehandler
-        $fh = fopen(__DIR__.DIRECTORY_SEPARATOR."import.txt", "r");
+        $fh = fopen(__DIR__ . DIRECTORY_SEPARATOR . "import.txt", "r");
 
         if ($fh) {
 
@@ -115,17 +104,137 @@ class WPMarkdownImporter {
 
             while (($line = fgets($fh)) !== false) {
                 // add line to array
-                if (rtrim($line) != "") {
-                    array_push($urls_to_process, rtrim($line));
+                if (trim($line) != "") {
+                    array_push($urls_to_process, trim($line));
                 }
             }
             fclose($fh);
 
             // add it back to the database
-            update_option(self::$plugin_name . "_URLS_TO_PROCESS", $urls_to_process);
+            return $urls_to_process;
         } else {
             // error opening the file.
-            self::add_message("There was a problem opening the file " . __DIR__.DIRECTORY_SEPARATOR."import.txt" . ".");
+            self::add_message("There was a problem opening the file " . __DIR__ . DIRECTORY_SEPARATOR . "import.txt" . ".");
+        
+            return false;
+        }
+    }
+    
+    /*
+     * Check to see if URI exists
+     */
+
+    static function uri_exists($uri){
+        $headers = get_headers($uri);
+        return stripos($headers[0],"200 OK")?true:false;
+    }
+    
+    /* Import media from url
+     *
+     * @param string $file_url URL of the existing file from the original site
+     * @param int $post_id The post ID of the post to which the imported media is to be attached
+     *
+     * @return boolean True on success, false on failure
+     */
+
+    static function fetch_media($file_url, $post_id, $markdown, $is_featured) {
+
+        error_log("importing " . $file_url . " to post " . $post_id);
+
+        //require_once(ABSPATH . 'wp-load.php');
+        //require_once(ABSPATH . 'wp-admin/includes/image.php');
+        global $wpdb;
+
+        if (!$post_id) {
+            self::add_message("No valid post id given when trying to attach images.");
+            return false;
+        }
+
+        if (self::uri_exists($file_url)) { 
+            
+            error_log("Now imported: ".$file_url);
+
+            $artDir = 'wp-content' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'importedmedia' . DIRECTORY_SEPARATOR . md5($markdown) . DIRECTORY_SEPARATOR;
+
+            //if the directory doesn't exist, create it
+            if (!file_exists(ABSPATH . $artDir)) {
+                mkdir(ABSPATH . $artDir);
+            }
+
+            //create a unique name for the file
+            $filenameArr = explode(".", $file_url);
+            $ext = array_pop($filenameArr);
+            $new_filename = md5($file_url . $markdown) . "." . $ext;
+
+
+            copy($file_url, ABSPATH . $artDir . $new_filename);
+
+            $siteurl = get_option('siteurl');
+            $file_info = getimagesize(ABSPATH . $artDir . $new_filename);
+
+            //create an array of attachment data to insert into wp_posts table
+            $artdata = array();
+            $artdata = array(
+                'post_author' => get_option(self::$plugin_name . "_IMPORT_AS"),
+                'post_date' => current_time('mysql'),
+                'post_date_gmt' => current_time('mysql'),
+                'post_title' => $file_url,
+                'post_status' => 'inherit',
+                'comment_status' => 'closed',
+                'ping_status' => 'closed',
+                'post_name' => sanitize_title_with_dashes(str_replace("_", "-", $new_filename)),
+                'post_modified' => current_time('mysql'),
+                'post_modified_gmt' => current_time('mysql'),
+                'post_parent' => $post_id,
+                'post_type' => 'attachment',
+                'guid' => $siteurl . '/' . $artDir . $new_filename,
+                'post_mime_type' => $file_info['mime'],
+                'post_excerpt' => '',
+                'post_content' => ''
+            );
+
+            $uploads = wp_upload_dir();
+            $save_path = $uploads['basedir'] . DIRECTORY_SEPARATOR . 'importedmedia' . DIRECTORY_SEPARATOR . md5($markdown) . DIRECTORY_SEPARATOR . $new_filename;
+
+            //insert the database record
+            $attach_id = wp_insert_attachment($artdata, $save_path, $post_id);
+
+            //generate metadata and thumbnails
+            if ($attach_data = wp_generate_attachment_metadata($attach_id, $save_path)) {
+                wp_update_attachment_metadata($attach_id, $attach_data);
+            }
+
+            // insert a key that makes it possible to wipe the post
+            add_post_meta($attach_id, 'WPMarkdownImporter', 'true', true);
+
+            //optional make it the featured image of the post it's attached to
+            if ($is_featured) {
+                $rows_affected = $wpdb->insert($wpdb->prefix . 'postmeta', array('post_id' => $post_id, 'meta_key' => '_thumbnail_id', 'meta_value' => $attach_id));
+            }
+        } else {
+            self::add_message("The image at ".$file_url." could not be found.");
+            return false;
+        }
+        return true;
+    }
+
+    /*
+     * Adds images found in metadata to the post
+     */
+
+    static function add_images_to_post($post_id, $images, $markdown, $type) {
+
+        var_dump($images);
+        // Add meta tags to post
+        foreach ($images as $key) {
+
+            if ($type == "image") {
+                self::fetch_media($key, $post_id, $markdown, false);
+            }
+
+            if ($type == "thumbnail") {
+                self::fetch_media($key, $post_id, $markdown, true);
+            }
         }
     }
 
@@ -173,21 +282,20 @@ class WPMarkdownImporter {
      */
 
     static function post_exists($uri) {
-        
+
         global $table_prefix;
         global $wpdb;
 
-        $sql = 'SELECT DISTINCT post_id FROM ' . $table_prefix . 'postmeta WHERE meta_key = "WPMarkdownImporterUri" AND meta_value = "'.$uri.'"';
+        $sql = 'SELECT DISTINCT post_id FROM ' . $table_prefix . 'postmeta WHERE meta_key = "WPMarkdownImporterUri" AND meta_value = "' . $uri . '"';
         $rows = $wpdb->get_results($sql, 'ARRAY_A');
         $number_of_rows = count($rows);
 
-        if ($number_of_rows == 0){
-            
+        if ($number_of_rows == 0) {
+
             // post does not exist
             return false;
-            
-        }else{
-            
+        } else {
+
             // post exists return the ID
             return $rows[0]["post_id"];
         }
@@ -204,17 +312,37 @@ class WPMarkdownImporter {
     /*
      * Check to see if post was altered
      */
-    
-    static function post_is_altered($post_id, $markdown){
-        
+
+    static function post_is_altered($post_id, $markdown) {
+
+        // disable this check for dev purposes
+        return true;
+
         $stored_hashkey = get_post_meta($post_id, 'WPMarkdownImporterHash', true);
-        
-        if ($stored_hashkey == md5($markdown)){
+
+        if ($stored_hashkey == md5($markdown)) {
             return false;
         }
         return true;
     }
-    
+
+    /*
+     * Imports images to a post
+     */
+
+    static function import_images_to_post($post_id, $meta_data, $markdown) {
+
+        // add image files to post
+        self::add_images_to_post($post_id, $meta_data["image"], $markdown, "image");
+        unset($meta_data["image"]);
+
+        // add thumbnail files to post
+        self::add_images_to_post($post_id, $meta_data["thumbnail"], $markdown, "thumbnail");
+        unset($meta_data["thumbnail"]);
+
+        return $meta_data;
+    }
+
     /*
      * inserts a markdown file as a post in wordpress
      */
@@ -281,8 +409,6 @@ class WPMarkdownImporter {
         $Parsedown = new Parsedown();
         $content = $Parsedown->text($markdown);
 
-        
-        
         // build the post
         $post = array(
             'post_title' => $meta_data["title"][0],
@@ -302,24 +428,29 @@ class WPMarkdownImporter {
         // check to see if we need to update or create a new post
         $post_id = self::post_exists($uri);
 
-        if ($post_id === false){
-            
+        if ($post_id === false) {
+
             // post does not exist, insert the post
             $post_id = wp_insert_post($post);
-            
+
+            // add images to the post
+            $meta_data = self::import_images_to_post($post_id, $meta_data, $markdown);
+
             // add metadata to the post
             self::add_meta_data_to_post($post_id, $meta_data, $uri, $markdown);
-            
-        }else{
-            
+        } else {
+
             // only update the post if it was altered
-            if (self::post_is_altered($post_id,$markdown)){
-                
+            if (self::post_is_altered($post_id, $markdown)) {
+
                 // post exists
-                $post["ID"]=$post_id;
-        
-                wp_update_post( $post );
-                
+                $post["ID"] = $post_id;
+
+                wp_update_post($post);
+
+                // add images to the post
+                $meta_data = self::import_images_to_post($post_id, $meta_data, $markdown);
+
                 // add metadata to the post
                 self::add_meta_data_to_post($post_id, $meta_data, $uri, $markdown);
             }
@@ -332,7 +463,7 @@ class WPMarkdownImporter {
      * Add metadata to post
      */
 
-     static function add_meta_data_to_post($post_id, $meta_data, $uri, $markdown){
+    static function add_meta_data_to_post($post_id, $meta_data, $uri, $markdown) {
 
         // Add meta tags to post
         foreach ($meta_data as $key => $array) {
@@ -351,8 +482,8 @@ class WPMarkdownImporter {
         add_post_meta($post_id, 'WPMarkdownImporterHash', md5($markdown), true);
         add_post_meta($post_id, 'WPMarkdownImporter', 'true', true);
         add_post_meta($post_id, 'WPMarkdownImporterUri', $uri, true);
-     }
-     
+    }
+
     /*
      * Imports this markdown document, returns true or false depending on
      * the successfull import
@@ -379,6 +510,7 @@ class WPMarkdownImporter {
         curl_close($ch);
 
         if ($status_code != 200) {
+            self::add_message("The Markdown document at ".$uri." could not be found.");
             return false;
         }
 
@@ -398,50 +530,68 @@ class WPMarkdownImporter {
 
         $urls_to_process = get_option(self::$plugin_name . "_URLS_TO_PROCESS");
 
+        // if there are no more URLS to process decide what to do
         if (count($urls_to_process) == 0) {
 
             // no more markdown files to import
             update_option(self::$plugin_name . "_IMPORTED_ALL_MARKDOWN_DOCUMENTS", true);
-            
-            return true;
-            
-        } else {
 
-            $next_uri = array_shift($urls_to_process);
-
-            if (self::import_this_markdown_file($next_uri) === true) {
-
-                // the document was imported, update the remaining documents
-                // to be updated
-
-                // if auto_import enabled and we have reached the end then reimport
-                // the documents to parse
+            // if import is active then fetch all files again
+            if (get_option(self::$plugin_name . "_ACTIVE") == true) {
                 
-                if(count($urls_to_process) == 0){
-                    update_option(self::$plugin_name . "_IMPORTED_ALL_MARKDOWN_DOCUMENTS", true);
-                }
+                $urls_to_process = self::get_imports_from_file();
                 
-                if (get_option(self::$plugin_name . "_ACTIVE") == true && count($urls_to_process) == 0) {
-                    
-                    self::add_imports_from_file();
-                    self::add_message("Successfully imported " . $next_uri . " to WordPress, now starting importing from top.");
-                    
-                } else {
-                    
-                    update_option(self::$plugin_name . "_URLS_TO_PROCESS", $urls_to_process);
-                    self::add_message("Successfully imported " . $next_uri . " to WordPress.");
+                // if the urls could be read and there are more than one
+                if ($urls_to_process == false || count($urls_to_process) == 0){
+
+                    self::add_message("There was a problem with reading the list of files to parse.");
+                    return true;
                 }
                 
                 
             } else {
-
-                // there was an error push the document to the end of the list
-
-                array_push($urls_to_process, $next_uri);
-                update_option(self::$plugin_name . "_URLS_TO_PROCESS", $urls_to_process);
-
-                self::add_message("There was a problem importing " . $next_uri . " to WordPress.");
+                self::add_message("You have successfully imported all of the markdown documents on the list.");
+                return true;
             }
+        }
+
+        // now import then next one
+        $next_uri = array_shift($urls_to_process);
+
+        if (self::import_this_markdown_file($next_uri) === true) {
+
+            // the document was imported, update the remaining documents
+            // to be updated
+            // if auto_import enabled and we have reached the end then reimport
+            // the documents to parse
+
+            update_option(self::$plugin_name . "_URLS_TO_PROCESS", $urls_to_process);
+
+            // give a message depending on if we reached bottom of the list of markdown documents.
+            if (get_option(self::$plugin_name . "_ACTIVE") == true && count($urls_to_process) == 0) {
+                self::add_message("Successfully imported " . $next_uri . " to WordPress, now starting importing from top.");
+            } else {
+                self::add_message("Successfully imported " . $next_uri . " to WordPress.");
+            }
+        } else {
+
+            // there was an error push the document to the end of the list
+            array_push($urls_to_process, $next_uri);
+            update_option(self::$plugin_name . "_URLS_TO_PROCESS", $urls_to_process);
+
+            self::add_message("There was a problem importing " . $next_uri . " to WordPress. The import has been postponed, and will be retried again.");
+        }
+    }
+
+    /*
+     * Scheduled import of next markdown file
+     */
+
+    static function import_next_markdown_file_scheduled() {
+
+        // if the plugin is activated then import the next markdown file
+        if (get_option(self::$plugin_name . "_ACTIVE") == true) {
+            self::import_next_markdown_file();
         }
     }
 
