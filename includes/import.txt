@@ -1,1 +1,7 @@
 http://exenova.dk/download/README.md
+https://raw.githubusercontent.com/larjen/WPToggler/master/README.md
+https://raw.githubusercontent.com/larjen/WPTweetImporter/master/README.md
+https://raw.githubusercontent.com/larjen/WPMarkdownImporter/master/README.md
+https://raw.githubusercontent.com/larjen/WPTagSanitizer/master/README.md
+https://raw.githubusercontent.com/larjen/WPRestCache/master/README.md
+https://raw.githubusercontent.com/larjen/WPRestApiExtensions/master/README.md
