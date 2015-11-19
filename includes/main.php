@@ -137,7 +137,7 @@ class WPMarkdownImporter {
      * @return boolean True on success, false on failure
      */
 
-    static function fetch_media($file_url, $post_id, $markdown, $is_featured) {
+    static function fetch_media($file_url, $post_id, $markdown, $is_featured, $image_meta_data) {
         
         // in order for this to run in background as a scheduled task, we need access
         // to these files
@@ -204,14 +204,37 @@ class WPMarkdownImporter {
             //insert the database record
             $attach_id = wp_insert_attachment($artdata, $save_path, $post_id);
 
+            $attach_data = [];
+            
             //generate metadata and thumbnails
             if ($attach_data = wp_generate_attachment_metadata($attach_id, $save_path)) {
+                
+                
+                // Give an absolute path to the image location of each image.
+                $attach_data["sizes"]["thumbnail"]["file"] =  $siteurl . '/' . $artDir . $attach_data["sizes"]["thumbnail"]["file"];
+                $attach_data["sizes"]["medium"]["file"] =  $siteurl . '/' . $artDir  . $attach_data["sizes"]["medium"]["file"];
+                $attach_data["sizes"]["post-thumbnail"]["file"] =  $siteurl . '/' . $artDir  . $attach_data["sizes"]["post-thumbnail"]["file"];
+                if (isset($attach_data["sizes"]["large"])){
+                    $attach_data["sizes"]["large"]["file"] =  $siteurl . '/' . $artDir  . $attach_data["sizes"]["large"]["file"];
+                }
+                $attach_data["file"] =  $siteurl . '/' . $artDir . $new_filename;
+                
+                // add something to attach data
+//                print_r($attach_data["sizes"]);
+                
                 wp_update_attachment_metadata($attach_id, $attach_data);
             }
 
             // insert a key that makes it possible to wipe the post
             add_post_meta($attach_id, 'WPMarkdownImporter', 'true', true);
 
+            // add meta data to the post from the array passed
+            foreach ($image_meta_data as $key => $value){
+                // insert a key that makes it possible to wipe the post
+                add_post_meta($attach_id, $key, $value, true);
+    
+            }
+            
             //optional make it the featured image of the post it's attached to
             if ($is_featured) {
                 $rows_affected = $wpdb->insert($wpdb->prefix . 'postmeta', array('post_id' => $post_id, 'meta_key' => '_thumbnail_id', 'meta_value' => $attach_id));
@@ -234,12 +257,17 @@ class WPMarkdownImporter {
         foreach ($images as $key) {
 
             if ($type == "image") {
-                self::fetch_media($key, $post_id, $markdown, false);
+                self::fetch_media($key, $post_id, $markdown, false, array("type"=>"image"));
             }
 
             if ($type == "thumbnail") {
-                self::fetch_media($key, $post_id, $markdown, true);
+                self::fetch_media($key, $post_id, $markdown, true, array("type"=>"thumbnail"));
             }
+
+            if ($type == "heroimage") {
+                self::fetch_media($key, $post_id, $markdown, true, array("type"=>"heroimage"));
+            }
+            
         }
     }
 
@@ -338,11 +366,15 @@ class WPMarkdownImporter {
     static function import_images_to_post($post_id, $meta_data, $markdown) {
 
         // add image files to post
-        self::add_images_to_post($post_id, $meta_data["image"], $markdown, "image");
+        if (isset($meta_data["image"])){
+            self::add_images_to_post($post_id, $meta_data["image"], $markdown, "image");
+        }
         unset($meta_data["image"]);
 
         // add thumbnail files to post
-        self::add_images_to_post($post_id, $meta_data["thumbnail"], $markdown, "thumbnail");
+        if (isset($meta_data["thumbnail"])){
+            self::add_images_to_post($post_id, $meta_data["thumbnail"], $markdown, "thumbnail");
+        }
         unset($meta_data["thumbnail"]);
 
         return $meta_data;
