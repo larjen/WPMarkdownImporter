@@ -304,6 +304,20 @@ class WPMarkdownImporter {
         }
 
         //print_r($meta_data);
+        
+        // normalize meta data to ensure all metadata is set
+        if (!isset($meta_data["title"])){
+            $meta_data["title"][0] = "Unknown title";
+        }
+        if (!isset($meta_data["excerpt"])){
+            $meta_data["excerpt"][0] = "Unknown excerpt";
+        }
+        if (!isset($meta_data["start_date"])){
+            $meta_data["start_date"][0] = current_time( 'mysql' );
+        }
+        if (!isset($meta_data["end_date"])){
+            $meta_data["end_date"][0] = current_time( 'mysql' );
+        }        
 
         return $meta_data;
     }
@@ -445,6 +459,8 @@ class WPMarkdownImporter {
         // now parse the content
         $Parsedown = new Parsedown();
         $content = $Parsedown->text($markdown);
+        
+        
 
         // build the post
         $post = array(
@@ -502,20 +518,24 @@ class WPMarkdownImporter {
 
     static function add_meta_data_to_post($post_id, $meta_data, $uri, $markdown) {
 
-        // Add meta tags to post
-        foreach ($meta_data as $key => $array) {
-            $value = '';
+        // only do something if meta data was found
+        if (count($meta_data) > 0){
+        
+            // Add meta tags to post
+            foreach ($meta_data as $key => $array) {
+                $value = '';
 
-            foreach ($array as $innerKey => $innerValue) {
-                $value = $innerValue . "," . $value;
+                foreach ($array as $innerKey => $innerValue) {
+                    $value = $innerValue . "," . $value;
+                }
+
+                if ($value != '') {
+                    $value = substr($value, 0, -1);
+                    add_post_meta($post_id, $key, $value, true);
+                }
             }
 
-            if ($value != '') {
-                $value = substr($value, 0, -1);
-                add_post_meta($post_id, $key, $value, true);
-            }
         }
-
         add_post_meta($post_id, 'WPMarkdownImporterHash', md5($markdown), true);
         add_post_meta($post_id, 'WPMarkdownImporter', 'true', true);
         add_post_meta($post_id, 'WPMarkdownImporterUri', $uri, true);
