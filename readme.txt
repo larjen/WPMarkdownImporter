@@ -39,7 +39,7 @@ It is possible to add tags, categories and images to your WordPress post by usin
     [//]: image (http://www.example.com/d.jpg)
     [//]: image (http://www.example.com/d.jpg)
 
-It is important, that these comments are placed in your Markdown document at the beginning of the line, and with the exact spacing as illustrated above.
+It is important, that these comments are placed at the end of your Markdown document at the beginning of a line, and with the exact spacing as illustrated above.
 
 Any additional comment names, will be added as meta data to your post.
 
