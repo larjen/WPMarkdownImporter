@@ -29,8 +29,8 @@ It is possible to add tags, categories and images to your WordPress post by usin
     [//]: category (category a)
     [//]: category (category b)
     [//]: category (add as many as you like)
-    [//]: start_date (20151112) // will serve as your publishing date
-    [//]: end_date (20151113)
+    [//]: start_date (20151112) // will serve as your publishing date, if not set it will be set to current time
+    [//]: end_date (20151113) // if not set it will be set to current time
     [//]: excerpt (Excerpt for your post.)
     [//]: tag (tag a)
     [//]: tag (tag b)
@@ -43,13 +43,14 @@ It is possible to add tags, categories and images to your WordPress post by usin
 
 It is important, that these comments are placed at the end of your Markdown document at the beginning of a line, and with the exact spacing as illustrated above.
 
-Any additional comment names, will be added as meta data to your post.
+Any additional comments, will be added as custom fields to your post.
 
     [//]: meta_data_key_a (meta_data_value_a)
     [//]: meta_data_key_b (meta_data_value_b)
     [//]: meta_data_key_c (meta_data_value_c)
     [//]: meta_data_key_a (meta_data_value_a) // will overwrite the first key
-    
+
+
 == Frequently Asked Questions ==
 
 = Do I use this at my own risk? =
