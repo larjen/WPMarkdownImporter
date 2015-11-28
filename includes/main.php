@@ -325,7 +325,7 @@ class WPMarkdownImporter {
             $meta_data["title"][0] = $first_line;
         }
         if (!isset($meta_data["excerpt"])) {
-            $meta_data["excerpt"][0] = "Unknown excerpt";
+            $meta_data["excerpt"][0] = false;
         }
         if (!isset($meta_data["start_date"])) {
             $meta_data["start_date"][0] = current_time('mysql');
@@ -509,7 +509,6 @@ class WPMarkdownImporter {
             'ping_status' => 'closed', // 'closed' means pingbacks or trackbacks turned off
             'post_author' => get_option(self::$plugin_name . "_IMPORT_AS"), //The user ID number of the author.
             'post_content' => $content, //The full text of the post.
-            'post_excerpt' => $meta_data["excerpt"][0],
             'post_date' => date("Y-m-d H:i:s", strtotime($meta_data["start_date"][0])), //The time post was made.
             'post_date_gmt' => gmdate("Y-m-d H:i:s", strtotime($meta_data["start_date"][0])), //The time post was made, in GMT.
             'post_status' => 'publish', //Set the status of the new post. 
@@ -517,6 +516,12 @@ class WPMarkdownImporter {
             'post_category' => $category_ids, //Categories
             'tags_input' => $tags //For tags.
         );
+        
+        // if found add the excerpt
+        if ($meta_data["excerpt"][0] !== false){
+            $post['post_excerpt'] = $meta_data["excerpt"][0];
+        }
+
 
         // check to see if we need to update or create a new post
         $post_id = self::post_exists($uri);

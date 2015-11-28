@@ -19,7 +19,7 @@ It is possible to add tags, categories and images to your WordPress post by usin
     [//]: category (category a)
     [//]: category (category b)
     [//]: category (add as many as you like)
-    [//]: start_date (20151112)
+    [//]: start_date (20151112) // will serve as your publishing date
     [//]: end_date (20151113)
     [//]: excerpt (Excerpt for your post.)
     [//]: tag (tag a)
