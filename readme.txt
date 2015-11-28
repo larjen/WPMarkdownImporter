@@ -19,6 +19,35 @@ WordPress plugin that imports a list of Markdown files into your WordPress blog 
 1. Download and unzip to your Wordpress plugin folder.
 2. Activate plugin.
 
+= Special Markdown Syntax =
+
+It is possible to add tags, categories and images to your WordPress post by using the following Markdown comments at the bottom of your document:
+
+    [//]: title (The title as it should appear in your Post, if not set it will use the first line of your document)
+    [//]: category (category a)
+    [//]: category (category b)
+    [//]: category (add as many as you like)
+    [//]: start_date (20151112)
+    [//]: end_date (20151113)
+    [//]: excerpt (Excerpt for your post.)
+    [//]: tag (tag a)
+    [//]: tag (tag b)
+    [//]: tag (add as many as you like)
+    [//]: thumbnail (http://www.example.com/a.jpg) // only one allowed
+    [//]: heroimage (http://www.example.com/b.jpg) // only one allowed
+    [//]: image (http://www.example.com/c.jpg) // add as many images as you like
+    [//]: image (http://www.example.com/d.jpg)
+    [//]: image (http://www.example.com/d.jpg)
+
+It is important, that these comments are placed in your Markdown document at the beginning of the line, and with the exact spacing as illustrated above.
+
+Any additional comment names, will be added as meta data to your post.
+
+    [//]: meta_data_key_a (meta_data_value_a)
+    [//]: meta_data_key_b (meta_data_value_b)
+    [//]: meta_data_key_c (meta_data_value_c)
+    [//]: meta_data_key_a (meta_data_value_a) // will overwrite the first key
+    
 == Frequently Asked Questions ==
 
 = Do I use this at my own risk? =
@@ -28,6 +57,10 @@ Yes.
 == Screenshots ==
 
 == Changelog ==
+
+= 1.0.2 =
+* Now imports images to post.
+* When images are detected, each time the post is imported all images are deleted.
 
 = 1.0.1 =
 * Now only update the document if it is changed, when auto-import is active.

@@ -25,7 +25,7 @@ It is possible to add tags, categories and images to your WordPress post by usin
     [//]: tag (add as many as you like)
     [//]: thumbnail (http://www.example.com/a.jpg) // only one allowed
     [//]: heroimage (http://www.example.com/b.jpg) // only one allowed
-    [//]: image (http://www.example.com/c.jpg) // add as many images as you want
+    [//]: image (http://www.example.com/c.jpg) // add as many images as you like
     [//]: image (http://www.example.com/d.jpg)
     [//]: image (http://www.example.com/d.jpg)
 
@@ -68,3 +68,4 @@ Any additional comment names, will be added as meta data to your post.
 [//]: heroimage (http://www.exenova.dk/download/b.jpg)
 [//]: image (http://www.exenova.dk/download/c.jpg)
 [//]: image (http://www.exenova.dk/download/d.jpg)
+[//]: arbitrary_meta_data_key (arbitrary_meta_data_value)

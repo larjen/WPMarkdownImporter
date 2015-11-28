@@ -188,10 +188,6 @@ class WPMarkdownImporterAdmin extends WPMarkdownImporter {
         echo '</form>';
         echo '</div>';
     }
-    
-    
-    
-
 }
 
 // register wp hooks

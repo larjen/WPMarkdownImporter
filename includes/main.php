@@ -5,7 +5,7 @@ require_once('parsedown-1.6.0/Parsedown.php');
 
 class WPMarkdownImporter {
 
-    static $debug = true;
+    static $debug = false;
     static $plugin_name = "WPMarkdownImporter";
     //static $import_file = "".__DIR__."".DIRECTORY_SEPARATOR."import.txt";
     static $newline_separator = "\r\n";
@@ -21,7 +21,7 @@ class WPMarkdownImporter {
         update_option(self::$plugin_name . "_IMPORTED_ALL_MARKDOWN_DOCUMENTS", false);
         update_option(self::$plugin_name . "_URLS_TO_PROCESS", self::get_imports_from_file());
 
-        
+
         self::add_message("Activated the plugin.");
     }
 
@@ -115,20 +115,20 @@ class WPMarkdownImporter {
         } else {
             // error opening the file.
             self::add_message("There was a problem opening the file " . __DIR__ . DIRECTORY_SEPARATOR . "import.txt" . ".");
-        
+
             return false;
         }
     }
-    
+
     /*
      * Check to see if URI exists
      */
 
-    static function uri_exists($uri){
+    static function uri_exists($uri) {
         $headers = get_headers($uri);
-        return stripos($headers[0],"200 OK")?true:false;
+        return stripos($headers[0], "200 OK") ? true : false;
     }
-    
+
     /* Import media from url
      *
      * @param string $file_url URL of the existing file from the original site
@@ -138,14 +138,14 @@ class WPMarkdownImporter {
      */
 
     static function fetch_media($file_url, $post_id, $markdown, $is_featured, $image_meta_data) {
-        
+
         // in order for this to run in background as a scheduled task, we need access
         // to these files
         require_once(ABSPATH . 'wp-load.php');
         require_once(ABSPATH . 'wp-admin/includes/image.php');
-        
-        
-        error_log("Importing:       " . $file_url . " to post " . $post_id);
+
+
+        //error_log("Importing:       " . $file_url . " to post " . $post_id);
 
 
         global $wpdb;
@@ -155,9 +155,9 @@ class WPMarkdownImporter {
             return false;
         }
 
-        if (self::uri_exists($file_url)) { 
-            
-            error_log("Verified exists: " . $file_url . " to post " . $post_id);
+        if (self::uri_exists($file_url)) {
+
+            //error_log("Verified exists: " . $file_url . " to post " . $post_id);
 
             $artDir = 'wp-content' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'importedmedia' . DIRECTORY_SEPARATOR . md5($markdown) . DIRECTORY_SEPARATOR;
 
@@ -205,36 +205,28 @@ class WPMarkdownImporter {
             $attach_id = wp_insert_attachment($artdata, $save_path, $post_id);
 
             $attach_data = [];
-            
+
             //generate metadata and thumbnails
             if ($attach_data = wp_generate_attachment_metadata($attach_id, $save_path)) {
-                
-                
+
+
                 // Give an absolute path to the image location of each image.
-                if (isset($attach_data["sizes"]["thumbnail"]["file"])){
-                    $attach_data["sizes"]["thumbnail"]["file_absolute"] =  $siteurl . '/' . $artDir . $attach_data["sizes"]["thumbnail"]["file"];
-                }
-                 
-                if (isset($attach_data["sizes"]["medium"]["file"])){
-                    $attach_data["sizes"]["medium"]["file_absolute"] =  $siteurl . '/' . $artDir . $attach_data["sizes"]["medium"]["file"];
+                if (isset($attach_data["sizes"]["thumbnail"]["file"])) {
+                    $attach_data["sizes"]["thumbnail"]["file_absolute"] = $siteurl . '/' . $artDir . $attach_data["sizes"]["thumbnail"]["file"];
                 }
 
-                if (isset($attach_data["sizes"]["post-thumbnail"]["file"])){
-                    $attach_data["sizes"]["post-thumbnail"]["file_absolute"] =  $siteurl . '/' . $artDir . $attach_data["sizes"]["post-thumbnail"]["file"];
+                if (isset($attach_data["sizes"]["medium"]["file"])) {
+                    $attach_data["sizes"]["medium"]["file_absolute"] = $siteurl . '/' . $artDir . $attach_data["sizes"]["medium"]["file"];
                 }
-                
-                if (isset($attach_data["sizes"]["large"])){
-                    $attach_data["sizes"]["large"]["file_absolute"] =  $siteurl . '/' . $artDir  . $attach_data["sizes"]["large"]["file"];
+
+                if (isset($attach_data["sizes"]["post-thumbnail"]["file"])) {
+                    $attach_data["sizes"]["post-thumbnail"]["file_absolute"] = $siteurl . '/' . $artDir . $attach_data["sizes"]["post-thumbnail"]["file"];
                 }
-                
-                // do not use this for the file url
-                //$attach_data["file"] =  $siteurl . '/' . $artDir . $new_filename;
-                
-                // $attach_data["file"] =  $artDir . $new_filename;
-                
-                // add something to attach data
-                // print_r($attach_data["sizes"]);
-                
+
+                if (isset($attach_data["sizes"]["large"])) {
+                    $attach_data["sizes"]["large"]["file_absolute"] = $siteurl . '/' . $artDir . $attach_data["sizes"]["large"]["file"];
+                }
+
                 wp_update_attachment_metadata($attach_id, $attach_data);
             }
 
@@ -242,21 +234,20 @@ class WPMarkdownImporter {
             add_post_meta($attach_id, 'WPMarkdownImporter', 'true', true);
 
             // insert the path to the image
-            add_post_meta($attach_id, 'img_path', $siteurl . '/' . $artDir , true);
-            
+            add_post_meta($attach_id, 'img_path', $siteurl . '/' . $artDir, true);
+
             // add meta data to the post from the array passed
-            foreach ($image_meta_data as $key => $value){
+            foreach ($image_meta_data as $key => $value) {
                 // insert a key that makes it possible to wipe the post
                 add_post_meta($attach_id, $key, $value, true);
-    
             }
-            
+
             //optional make it the featured image of the post it's attached to
             if ($is_featured) {
                 $rows_affected = $wpdb->insert($wpdb->prefix . 'postmeta', array('post_id' => $post_id, 'meta_key' => '_thumbnail_id', 'meta_value' => $attach_id));
             }
         } else {
-            self::add_message("The image at ".$file_url." could not be found.");
+            self::add_message("The image at " . $file_url . " could not be found.");
             return false;
         }
         return true;
@@ -268,22 +259,20 @@ class WPMarkdownImporter {
 
     static function add_images_to_post($post_id, $images, $markdown, $type) {
 
-        var_dump($images);
         // Add meta tags to post
         foreach ($images as $key) {
 
             if ($type == "image") {
-                self::fetch_media($key, $post_id, $markdown, false, array("type"=>"image"));
+                self::fetch_media($key, $post_id, $markdown, false, array("type" => "image"));
             }
 
             if ($type == "thumbnail") {
-                self::fetch_media($key, $post_id, $markdown, true, array("type"=>"thumbnail"));
+                self::fetch_media($key, $post_id, $markdown, true, array("type" => "thumbnail"));
             }
 
             if ($type == "heroimage") {
-                self::fetch_media($key, $post_id, $markdown, true, array("type"=>"heroimage"));
+                self::fetch_media($key, $post_id, $markdown, true, array("type" => "heroimage"));
             }
-            
         }
     }
 
@@ -320,31 +309,30 @@ class WPMarkdownImporter {
         }
 
         //print_r($meta_data);
-        
         // normalize meta data to ensure all metadata is set
-        if (!isset($meta_data["title"])){
-            
+        if (!isset($meta_data["title"])) {
+
             // assume the title is the first line
             $first_line = strtok($markdown, "\n");
-            
+
             // remove any = and #
-            $first_line = str_replace('#','', $first_line);
-            $first_line = str_replace('=','', $first_line);
-            
+            $first_line = str_replace('#', '', $first_line);
+            $first_line = str_replace('=', '', $first_line);
+
             // trim the title
             $first_line = trim($first_line);
-            
-            $meta_data["title"][0] =  $first_line;
+
+            $meta_data["title"][0] = $first_line;
         }
-        if (!isset($meta_data["excerpt"])){
+        if (!isset($meta_data["excerpt"])) {
             $meta_data["excerpt"][0] = "Unknown excerpt";
         }
-        if (!isset($meta_data["start_date"])){
-            $meta_data["start_date"][0] = current_time( 'mysql' );
+        if (!isset($meta_data["start_date"])) {
+            $meta_data["start_date"][0] = current_time('mysql');
         }
-        if (!isset($meta_data["end_date"])){
-            $meta_data["end_date"][0] = current_time( 'mysql' );
-        }        
+        if (!isset($meta_data["end_date"])) {
+            $meta_data["end_date"][0] = current_time('mysql');
+        }
 
         return $meta_data;
     }
@@ -401,19 +389,44 @@ class WPMarkdownImporter {
     }
 
     /*
+     * Dekete all attachments for a single post
+     */
+
+    static function delete_all_attachements($post_id) {
+
+        $attachments = get_posts(array(
+            'post_type' => 'attachment',
+            'posts_per_page' => -1,
+            'post_status' => 'any',
+            'post_parent' => $post_id
+        ));
+
+        foreach ($attachments as $attachment) {
+            if (false === wp_delete_attachment($attachment->ID)) {
+                // Log failure to delete attachment.
+                self::add_message("There was a problem deleting attachment id = " . $attachment->ID . " from post id = " . $post_id . ".");
+            }
+        }
+    }
+
+    /*
      * Imports images to a post
      */
 
     static function import_images_to_post($post_id, $meta_data, $markdown) {
 
+        // first delete all existing images for the post
+
+        self::delete_all_attachements($post_id);
+
         // add image files to post
-        if (isset($meta_data["image"])){
+        if (isset($meta_data["image"])) {
             self::add_images_to_post($post_id, $meta_data["image"], $markdown, "image");
         }
         unset($meta_data["image"]);
 
         // add thumbnail files to post
-        if (isset($meta_data["thumbnail"])){
+        if (isset($meta_data["thumbnail"])) {
             self::add_images_to_post($post_id, $meta_data["thumbnail"], $markdown, "thumbnail");
         }
         unset($meta_data["thumbnail"]);
@@ -486,8 +499,8 @@ class WPMarkdownImporter {
         // now parse the content
         $Parsedown = new Parsedown();
         $content = $Parsedown->text($markdown);
-        
-        
+
+
 
         // build the post
         $post = array(
@@ -546,8 +559,8 @@ class WPMarkdownImporter {
     static function add_meta_data_to_post($post_id, $meta_data, $uri, $markdown) {
 
         // only do something if meta data was found
-        if (count($meta_data) > 0){
-        
+        if (count($meta_data) > 0) {
+
             // Add meta tags to post
             foreach ($meta_data as $key => $array) {
                 $value = '';
@@ -561,7 +574,6 @@ class WPMarkdownImporter {
                     add_post_meta($post_id, $key, $value, true);
                 }
             }
-
         }
         add_post_meta($post_id, 'WPMarkdownImporterHash', md5($markdown), true);
         add_post_meta($post_id, 'WPMarkdownImporter', 'true', true);
@@ -594,7 +606,7 @@ class WPMarkdownImporter {
         curl_close($ch);
 
         if ($status_code != 200) {
-            self::add_message("The Markdown document at ".$uri." could not be found.");
+            self::add_message("The Markdown document at " . $uri . " could not be found.");
             return false;
         }
 
@@ -622,17 +634,15 @@ class WPMarkdownImporter {
 
             // if import is active then fetch all files again
             if (get_option(self::$plugin_name . "_ACTIVE") == true) {
-                
+
                 $urls_to_process = self::get_imports_from_file();
-                
+
                 // if the urls could be read and there are more than one
-                if ($urls_to_process == false || count($urls_to_process) == 0){
+                if ($urls_to_process == false || count($urls_to_process) == 0) {
 
                     self::add_message("There was a problem with reading the list of files to parse.");
                     return true;
                 }
-                
-                
             } else {
                 self::add_message("You have successfully imported all of the markdown documents on the list.");
                 return true;
