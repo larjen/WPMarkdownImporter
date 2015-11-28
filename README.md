@@ -8,6 +8,8 @@ This plugin uses the [Parsedown](https://github.com/erusev/parsedown) engine.
 
 1. Download and unzip to your Wordpress plugin folder.
 2. Activate plugin.
+3. Go to the plugin control panel, and add one URL per line for each Markdown document you want to import.
+4. Save the list and configure how you want to import the Markdown documents.
 
 ### Special Markdown Syntax
 
