@@ -211,16 +211,29 @@ class WPMarkdownImporter {
                 
                 
                 // Give an absolute path to the image location of each image.
-                $attach_data["sizes"]["thumbnail"]["file"] =  $siteurl . '/' . $artDir . $attach_data["sizes"]["thumbnail"]["file"];
-                $attach_data["sizes"]["medium"]["file"] =  $siteurl . '/' . $artDir  . $attach_data["sizes"]["medium"]["file"];
-                $attach_data["sizes"]["post-thumbnail"]["file"] =  $siteurl . '/' . $artDir  . $attach_data["sizes"]["post-thumbnail"]["file"];
-                if (isset($attach_data["sizes"]["large"])){
-                    $attach_data["sizes"]["large"]["file"] =  $siteurl . '/' . $artDir  . $attach_data["sizes"]["large"]["file"];
+                if (isset($attach_data["sizes"]["thumbnail"]["file"])){
+                    $attach_data["sizes"]["thumbnail"]["file_absolute"] =  $siteurl . '/' . $artDir . $attach_data["sizes"]["thumbnail"]["file"];
                 }
-                $attach_data["file"] =  $siteurl . '/' . $artDir . $new_filename;
+                 
+                if (isset($attach_data["sizes"]["medium"]["file"])){
+                    $attach_data["sizes"]["medium"]["file_absolute"] =  $siteurl . '/' . $artDir . $attach_data["sizes"]["medium"]["file"];
+                }
+
+                if (isset($attach_data["sizes"]["post-thumbnail"]["file"])){
+                    $attach_data["sizes"]["post-thumbnail"]["file_absolute"] =  $siteurl . '/' . $artDir . $attach_data["sizes"]["post-thumbnail"]["file"];
+                }
+                
+                if (isset($attach_data["sizes"]["large"])){
+                    $attach_data["sizes"]["large"]["file_absolute"] =  $siteurl . '/' . $artDir  . $attach_data["sizes"]["large"]["file"];
+                }
+                
+                // do not use this for the file url
+                //$attach_data["file"] =  $siteurl . '/' . $artDir . $new_filename;
+                
+                // $attach_data["file"] =  $artDir . $new_filename;
                 
                 // add something to attach data
-//                print_r($attach_data["sizes"]);
+                // print_r($attach_data["sizes"]);
                 
                 wp_update_attachment_metadata($attach_id, $attach_data);
             }
@@ -228,6 +241,9 @@ class WPMarkdownImporter {
             // insert a key that makes it possible to wipe the post
             add_post_meta($attach_id, 'WPMarkdownImporter', 'true', true);
 
+            // insert the path to the image
+            add_post_meta($attach_id, 'img_path', $siteurl . '/' . $artDir , true);
+            
             // add meta data to the post from the array passed
             foreach ($image_meta_data as $key => $value){
                 // insert a key that makes it possible to wipe the post
@@ -307,7 +323,18 @@ class WPMarkdownImporter {
         
         // normalize meta data to ensure all metadata is set
         if (!isset($meta_data["title"])){
-            $meta_data["title"][0] = "Unknown title";
+            
+            // assume the title is the first line
+            $first_line = strtok($markdown, "\n");
+            
+            // remove any = and #
+            $first_line = str_replace('#','', $first_line);
+            $first_line = str_replace('=','', $first_line);
+            
+            // trim the title
+            $first_line = trim($first_line);
+            
+            $meta_data["title"][0] =  $first_line;
         }
         if (!isset($meta_data["excerpt"])){
             $meta_data["excerpt"][0] = "Unknown excerpt";
