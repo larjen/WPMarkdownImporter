@@ -38,10 +38,12 @@ It is possible to add tags, categories and images to your WordPress post by usin
     [//]: thumbnail (http://www.example.com/a.jpg) // only one allowed
     [//]: heroimage (http://www.example.com/b.jpg) // only one allowed
     [//]: image (http://www.example.com/c.jpg) // add as many images as you like
-    [//]: image (http://www.example.com/d.jpg)
-    [//]: image (http://www.example.com/d.jpg)
+    [//]: image (http://www.example.com/d.jpg|Title|Caption|Alternative Text|Description)
+    [//]: image (http://www.example.com/d.jpg|Just a title)
 
 It is important, that these comments are placed at the end of your Markdown document at the beginning of a line, and with the exact spacing as illustrated above.
+
+When importing images to WordPress you may optionally use the pipe character to delimit and add more data to the image.
 
 Any additional comments, will be added as custom fields to your post.
 
@@ -49,7 +51,6 @@ Any additional comments, will be added as custom fields to your post.
     [//]: meta_data_key_b (meta_data_value_b)
     [//]: meta_data_key_c (meta_data_value_c)
     [//]: meta_data_key_a (meta_data_value_a) // will overwrite the first key
-
 
 == Frequently Asked Questions ==
 
@@ -64,6 +65,7 @@ Yes.
 = 1.0.2 =
 * Now imports images to post.
 * When images are detected, each time the post is imported all images are deleted.
+* You may specify title, caption, alttext and description when importing images to WordPress.
 
 = 1.0.1 =
 * Now only update the document if it is changed, when auto-import is active.

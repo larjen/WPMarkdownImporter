@@ -154,8 +154,35 @@ class WPMarkdownImporter {
             self::add_message("No valid post id given when trying to attach images.");
             return false;
         }
+        
+        // now make sure to get any additional info from the file url: Title|Caption|Alternative Text|Description
 
-        if (self::uri_exists($file_url)) {
+        $file_url_array = explode("|",$file_url);
+        
+        $media_location = $file_url_array[0];
+        $media_title = $media_location;
+        $media_caption = "Caption text for image at ".$media_location;
+        $media_alternative = "Alternative text for image at ".$media_location;
+        $media_description = "Description for image at ".$media_location;
+        
+        
+        if (isset($file_url_array[1])){
+            $media_title = $file_url_array[1];
+        }
+        
+        if (isset($file_url_array[2])){
+            $media_caption = $file_url_array[2];
+        }
+
+        if (isset($file_url_array[3])){
+            $media_alternative = $file_url_array[3];
+        }
+
+        if (isset($file_url_array[4])){
+            $media_description = $file_url_array[4];
+        }
+
+        if (self::uri_exists($media_location)) {
 
             //error_log("Verified exists: " . $file_url . " to post " . $post_id);
 
@@ -167,12 +194,12 @@ class WPMarkdownImporter {
             }
 
             //create a unique name for the file
-            $filenameArr = explode(".", $file_url);
+            $filenameArr = explode(".", $media_location);
             $ext = array_pop($filenameArr);
-            $new_filename = md5($file_url . $markdown) . "." . $ext;
+            $new_filename = md5($media_location . $markdown) . "." . $ext;
 
 
-            copy($file_url, ABSPATH . $artDir . $new_filename);
+            copy($media_location, ABSPATH . $artDir . $new_filename);
 
             $siteurl = get_option('siteurl');
             $file_info = getimagesize(ABSPATH . $artDir . $new_filename);
@@ -183,19 +210,19 @@ class WPMarkdownImporter {
                 'post_author' => get_option(self::$plugin_name . "_IMPORT_AS"),
                 'post_date' => current_time('mysql'),
                 'post_date_gmt' => current_time('mysql'),
-                'post_title' => $file_url,
+                'post_title' => $media_title,
                 'post_status' => 'inherit',
                 'comment_status' => 'closed',
                 'ping_status' => 'closed',
-                'post_name' => sanitize_title_with_dashes(str_replace("_", "-", $new_filename)),
+                'post_name' => sanitize_title_with_dashes(str_replace("_", "-", $media_title)),
                 'post_modified' => current_time('mysql'),
                 'post_modified_gmt' => current_time('mysql'),
                 'post_parent' => $post_id,
                 'post_type' => 'attachment',
                 'guid' => $siteurl . '/' . $artDir . $new_filename,
                 'post_mime_type' => $file_info['mime'],
-                'post_excerpt' => '',
-                'post_content' => ''
+                'post_excerpt' => $media_caption,
+                'post_content' => $media_description
             );
 
             $uploads = wp_upload_dir();
@@ -229,6 +256,9 @@ class WPMarkdownImporter {
 
                 wp_update_attachment_metadata($attach_id, $attach_data);
             }
+            
+            // insert alternative text
+            add_post_meta($attach_id, '_wp_attachment_image_alt', $media_alternative, true);
 
             // insert a key that makes it possible to wipe the post
             add_post_meta($attach_id, 'WPMarkdownImporter', 'true', true);
